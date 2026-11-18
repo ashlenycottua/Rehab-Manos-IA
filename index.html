@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rehab Manos AI — Rehabilitación de Mano y Muñeca</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0B6D6C;
+      --on-primary: #FFFFFF;
+      --primary-container: #CDEEEB;
+      --on-primary-container: #063838;
+      --secondary: #C8644B;
+      --secondary-container: #FFE0D8;
+      --on-secondary-container: #4D1A0E;
+      --tertiary: #3E7B67;
+      --tertiary-container: #D9F2E8;
+      --on-tertiary-container: #0E382B;
+      --bg: #FAF8F4;
+      --on-bg: #142423;
+      --surface: #FFFFFF;
+      --surface-variant: #EFF3F1;
+      --on-surface-variant: #445957;
+      --outline: #C9D6D4;
+      --amber-bg: #FFF4E5;
+      --amber-text: #7A4100;
+      --shadow-sm: 0 2px 10px rgba(20, 36, 35, 0.05);
+      --shadow-md: 0 10px 30px rgba(20, 36, 35, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--on-bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 84px;
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* App Shell */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+    .nav-rail {
+      display: none;
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--outline);
+      padding: 24px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px 18px;
+      border-bottom: 1px solid var(--surface-variant);
+      margin-bottom: 8px;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .brand-title { font-size: 15px; font-weight: 700; color: var(--on-bg); }
+    .brand-sub { font-size: 11px; color: var(--on-surface-variant); }
+
+    .rail-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+    }
+    .rail-btn:hover { background: var(--surface-variant); }
+    .rail-btn.active {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    .main-content {
+      flex: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 20px 18px 36px;
+      width: 100%;
+    }
+
+    /* Bottom Navigation (Mobile) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--outline);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    .bottom-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 4px;
+      color: var(--on-surface-variant);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .bottom-btn .pill {
+      padding: 4px 14px;
+      border-radius: 999px;
+      transition: background 0.2s;
+      font-size: 17px;
+    }
+    .bottom-btn.active { color: var(--primary); }
+    .bottom-btn.active .pill {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    @media (min-width: 760px) {
+      body { padding-bottom: 0; }
+      .nav-rail { display: flex; }
+      .bottom-nav { display: none; }
+      .main-content { padding: 28px 32px 48px; }
+    }
+
+    /* Cards & Components */
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(201, 214, 212, 0.7);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .hero-card {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0B6D6C 0%, #174B4A 100%);
+      color: white;
+      min-height: 200px;
+      display: flex;
+      align-items: flex-end;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 18px;
+    }
+    .hero-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.36;
+    }
+    .hero-overlay {
+      position: relative;
+      z-index: 1;
+      padding: 22px;
+      width: 100%;
+      background: linear-gradient(180deg, transparent 0%, rgba(10, 42, 42, 0.88) 100%);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .badge.secondary { background: var(--secondary-container); color: var(--on-secondary-container); }
+    .badge.sage { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 46px;
+      padding: 10px 18px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.1s, opacity 0.2s, background 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { opacity: 0.94; }
+    .btn-outlined {
+      background: var(--surface);
+      color: var(--primary);
+      border-color: var(--outline);
+    }
+    .btn-outlined:hover { background: var(--surface-variant); }
+
+    .section-title { font-size: 18px; font-weight: 700; margin: 20px 0 10px; }
+    .muted { color: var(--on-surface-variant); font-size: 14px; }
+    .stack { display: flex; flex-direction: column; gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 560px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid rgba(201, 214, 212, 0.75);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .kpi-label { font-size: 12px; color: var(--on-surface-variant); font-weight: 500; }
+    .kpi-value { font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 2px; }
+
+    /* Horizontal Routine Strip */
+    .routine-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .routine-card {
+      background: var(--surface);
+      border: 1px solid rgba(201, 214, 212, 0.75);
+      border-radius: 22px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .routine-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .routine-card img { width: 100%; height: 130px; object-fit: cover; display: block; }
+    .routine-card-body { padding: 14px; }
+
+    /* Search & Chips */
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
+    }
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      color: var(--primary);
+      font-size: 17px;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 14px 44px 14px 44px;
+      border-radius: 20px;
+      border: 1.5px solid var(--outline);
+      background: var(--surface);
+      font-size: 15px;
+      color: var(--on-bg);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .clear-search {
+      position: absolute;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-variant);
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .chip {
+      border: 1px solid var(--outline);
+      background: var(--surface);
+      color: var(--on-surface-variant);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-color: var(--primary);
+    }
+
+    /* Exercise Row Card */
+    .exercise-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid rgba(201, 214, 212, 0.75);
+      border-radius: 22px;
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .exercise-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .exercise-thumb {
+      width: 82px;
+      height: 82px;
+      border-radius: 16px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    /* Segmented Control */
+    .segmented {
+      display: flex;
+      background: var(--surface-variant);
+      padding: 4px;
+      border-radius: 16px;
+      gap: 4px;
+    }
+    .segmented button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+    }
+    .segmented button.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Weekly Bar Chart */
+    .chart-container {
+      padding: 18px 8px 6px;
+    }
+    .bars-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      align-items: end;
+      height: 170px;
+      border-bottom: 1.5px solid var(--outline);
+      padding-bottom: 8px;
+    }
+    .bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+      gap: 6px;
+    }
+    .bar-fill {
+      width: 100%;
+      max-width: 34px;
+      background: linear-gradient(180deg, var(--primary) 0%, #188c8a 100%);
+      border-radius: 10px 10px 4px 4px;
+      min-height: 4px;
+      transition: height 0.35s ease;
+    }
+    .bar-fill.empty { background: var(--surface-variant); }
+    .bar-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 23, 23, 0.58);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--bg);
+      width: 100%;
+      max-width: 640px;
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    }
+    .demo-stage {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--outline);
+      height: 240px;
+      display: grid;
+      place-items: center;
+    }
+    .demo-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .demo-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 14px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      background: linear-gradient(180deg, transparent, rgba(14, 23, 23, 0.85));
+    }
+
+    .safety-box {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 13px;
+      border: 1px solid rgba(122, 65, 0, 0.16);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 92px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #142423;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+      z-index: 200;
+      box-shadow: var(--shadow-md);
+    }
+    @media (min-width: 760px) { .toast { bottom: 24px; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="nav-rail" aria-label="Navegación principal">
+      <div class="brand-pill">
+        <div class="brand-icon">RM</div>
+        <div>
+          <div class="brand-title">Rehab Manos AI</div>
+          <div class="brand-sub">Cuidado guiado</div>
+        </div>
+      </div>
+      <button class="rail-btn active" data-tab="home">🏠 Inicio</button>
+      <button class="rail-btn" data-tab="exercises">🖐️ Ejercicios</button>
+      <button class="rail-btn" data-tab="guide">📖 Guía</button>
+      <button class="rail-btn" data-tab="progress">📊 Progreso</button>
+      <button class="rail-btn" data-tab="profile">👤 Perfil</button>
+    </aside>
+
+    <main class="main-content" id="app-root"></main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Barra inferior">
+    <button class="bottom-btn active" data-tab="home"><span class="pill">🏠</span><span>Inicio</span></button>
+    <button class="bottom-btn" data-tab="exercises"><span class="pill">🖐️</span><span>Ejercicios</span></button>
+    <button class="bottom-btn" data-tab="guide"><span class="pill">📖</span><span>Guía</span></button>
+    <button class="bottom-btn" data-tab="progress"><span class="pill">📊</span><span>Progreso</span></button>
+    <button class="bottom-btn" data-tab="profile"><span class="pill">👤</span><span>Perfil</span></button>
+  </nav>
+
+  <div class="modal-backdrop" id="exercise-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" id="modal-content"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const CATEGORIES = {
+      MOVILIDAD: { id: "MOVILIDAD", short: "Movilidad", title: "Movilidad articular", subtitle: "Flexión, extensión y amplitud de muñeca y mano", badge: "" },
+      FORTALECIMIENTO: { id: "FORTALECIMIENTO", short: "Fuerza", title: "Fortalecimiento", subtitle: "Fuerza controlada de agarre y pinza", badge: "secondary" },
+      MOTRICIDAD_FINA: { id: "MOTRICIDAD_FINA", short: "Motricidad", title: "Motricidad fina", subtitle: "Coordinación, precisión y destreza cotidiana", badge: "sage" },
+      MOVILIDAD_DEDOS: { id: "MOVILIDAD_DEDOS", short: "Dedos", title: "Movilidad de dedos", subtitle: "Movimientos guiados de tendones y falanges", badge: "" }
+    };
+
+    const PHOTO_MAP = {
+      WRIST_FLEX_EXT: "/assets/img_hand_wrist_mobility.jpg",
+      TABLETOP_FLEX: "/assets/img_hand_wrist_mobility.jpg",
+      GRIP_SQUEEZE: "/assets/img_hand_grip_strength.jpg",
+      PINCH_CONTROL: "/assets/img_hand_thumb_pinch.jpg",
+      THUMB_OPPOSITION: "/assets/img_hand_thumb_pinch.jpg",
+      TENDON_GLIDE: "/assets/img_hand_tendon_glide.jpg",
+      HOOK_FIST: "/assets/img_hand_tendon_glide.jpg",
+      FINGER_SPREAD: "/assets/img_hand_finger_spread.jpg"
+    };
+
+    const EXERCISES = [
+      {
+        id: "wrist_flex_ext",
+        title: "Flexión y extensión de muñeca",
+        category: "MOVILIDAD",
+        motionType: "WRIST_FLEX_EXT",
+        difficulty: "Suave",
+        sets: 3, reps: 10, minutes: 4,
+        summary: "Movilización progresiva de la muñeca apoyando el antebrazo sobre una mesa para liberar tensión articular.",
+        pose: "Extensión suave de muñeca con dedos relajados",
+        posture: [
+          "Siéntate cómodo con la espalda recta y apoya el antebrazo sobre una mesa acolchada.",
+          "Deja la mano sobresaliendo suavemente del borde de la mesa con la palma hacia abajo.",
+          "Eleva el dorso de la mano despacio hacia arriba sin despegar el antebrazo.",
+          "Desciende luego la mano con control sin forzar el límite si aparece tirantez intensa."
+        ],
+        phases: [
+          { label: "Elevar muñeca", cue: "Eleva suavemente la mano hacia arriba", sec: 3, p: 1 },
+          { label: "Sostener", cue: "Mantén la postura con los hombros relajados", sec: 2, p: 1 },
+          { label: "Bajar suave", cue: "Desciende la mano despacio y relaja", sec: 3, p: 0 }
+        ],
+        warnings: ["Evita levantar el codo o compensar con el hombro.", "Detén el ejercicio si sientes pinchazo agudo u hormigueo."]
+      },
+      {
+        id: "tabletop_bend",
+        title: "Flexión en mesa (posición de techo)",
+        category: "MOVILIDAD",
+        motionType: "TABLETOP_FLEX",
+        difficulty: "Suave",
+        sets: 3, reps: 10, minutes: 4,
+        summary: "Flexión exclusiva de los nudillos manteniendo los dedos estirados en forma de L, ideal para rigidez articular.",
+        pose: "Mano en posición de mesa (nudillos flexionados a 90 grados)",
+        posture: [
+          "Apoya el codo sobre la mesa con el antebrazo vertical y la mano apuntando hacia el techo.",
+          "Mantén la muñeca neutra y alineada con el antebrazo.",
+          "Dobla solo los nudillos principales formando un ángulo recto, con los dedos rectos como una visera."
+        ],
+        phases: [
+          { label: "Doblar nudillos", cue: "Dobla solo los nudillos manteniendo dedos rectos", sec: 3, p: 1 },
+          { label: "Sostener", cue: "Sostén la posición de mesa durante dos segundos", sec: 2, p: 1 },
+          { label: "Extender", cue: "Regresa despacio a la mano abierta vertical", sec: 3, p: 0 }
+        ],
+        warnings: ["No enrosques las puntas de los dedos durante este movimiento.", "Evita inclinar la muñeca hacia los costados."]
+      },
+      {
+        id: "wrist_radial_glide",
+        title: "Inclinación lateral de muñeca",
+        category: "MOVILIDAD",
+        motionType: "WRIST_FLEX_EXT",
+        difficulty: "Suave",
+        sets: 2, reps: 10, minutes: 3,
+        summary: "Deslizamiento lateral suave de la mano sobre la mesa en gesto de saludo para ganar amplitud lateral.",
+        pose: "Mano abierta apoyada con alineación neutra de muñeca",
+        posture: [
+          "Apoya la palma plana sobre una superficie lisa o toalla.",
+          "Mantén el antebrazo quieto y desliza la mano hacia el lado del pulgar.",
+          "Vuelve al centro y desliza suavemente hacia el lado del meñique."
+        ],
+        phases: [
+          { label: "Hacia el pulgar", cue: "Desliza suavemente hacia el lado del pulgar", sec: 3, p: 0.85 },
+          { label: "Centro y meñique", cue: "Pasa por el centro y desliza hacia el meñique", sec: 3, p: 0.25 },
+          { label: "Reposo neutro", cue: "Vuelve al centro y descansa", sec: 2, p: 0 }
+        ],
+        warnings: ["No gires el antebrazo ni despegues la palma de la mesa."]
+      },
+      {
+        id: "soft_grip_squeeze",
+        title: "Apretón suave de pelota blanda",
+        category: "FORTALECIMIENTO",
+        motionType: "GRIP_SQUEEZE",
+        difficulty: "Moderado",
+        sets: 3, reps: 8, minutes: 4,
+        summary: "Activación controlada de los flexores de la mano utilizando una pelota de espuma muy blanda o una toalla enrollada.",
+        pose: "Puño suave y simétrico con muñeca recta",
+        posture: [
+          "Sostén una pelota blanda o toalla pequeña en la palma de tu mano.",
+          "Mantén la muñeca recta, nunca caída hacia abajo.",
+          "Presiona de forma uniforme y progresiva hasta un esfuerzo cómodo del 50%."
+        ],
+        phases: [
+          { label: "Presionar suave", cue: "Aprieta la pelota de forma lenta y uniforme", sec: 3, p: 1 },
+          { label: "Mantener", cue: "Sostén la presión sin contener la respiración", sec: 3, p: 1 },
+          { label: "Soltar lento", cue: "Abre los dedos despacio y relaja por completo", sec: 3, p: 0 }
+        ],
+        warnings: ["No uses pelotas duras en etapa temprana.", "No aprietes hasta sentir dolor agudo."]
+      },
+      {
+        id: "isometric_pinch",
+        title: "Pinza firme con esponja",
+        category: "FORTALECIMIENTO",
+        motionType: "PINCH_CONTROL",
+        difficulty: "Moderado",
+        sets: 3, reps: 8, minutes: 4,
+        summary: "Fortalece la pinza lateral y terminal entre el pulgar y el índice para acciones cotidianas como girar llaves o abrir envases.",
+        pose: "Pinza redondeada en forma de O entre pulgar e índice",
+        posture: [
+          "Coloca una esponja o almohadilla blanda entre la yema del pulgar y el índice.",
+          "Forma un círculo redondeado con ambos dedos antes de presionar.",
+          "Presiona suavemente sin colapsar la articulación de la punta del pulgar."
+        ],
+        phases: [
+          { label: "Presionar pinza", cue: "Presiona suavemente formando una letra O", sec: 3, p: 1 },
+          { label: "Sostener", cue: "Mantén el contacto firme sin tensar el cuello", sec: 2, p: 1 },
+          { label: "Relajar", cue: "Separa los dedos despacio y descansa", sec: 2, p: 0 }
+        ],
+        warnings: ["Evita que la punta del pulgar se doble hacia atrás en hiperextensión."]
+      },
+      {
+        id: "finger_extension_band",
+        title: "Apertura contra resistencia leve",
+        category: "FORTALECIMIENTO",
+        motionType: "FINGER_SPREAD",
+        difficulty: "Moderado",
+        sets: 2, reps: 10, minutes: 3,
+        summary: "Equilibra la musculatura extensora abriendo los dedos en abanico con una banda elástica suave o contra el aire.",
+        pose: "Mano abierta con dedos separados en abanico",
+        posture: [
+          "Junta las yemas de todos los dedos como un capullo.",
+          "Si tu profesional lo indicó, rodea los dedos con una banda elástica suave.",
+          "Abre los dedos en abanico separándolos de manera pareja."
+        ],
+        phases: [
+          { label: "Abrir abanico", cue: "Separa los dedos de forma pareja hacia afuera", sec: 3, p: 1 },
+          { label: "Sostener", cue: "Mantén los dedos separados dos segundos", sec: 2, p: 1 },
+          { label: "Cerrar lento", cue: "Vuelve a juntar las yemas sin golpear", sec: 3, p: 0 }
+        ],
+        warnings: ["No uses bandas demasiado tensas que doblen la muñeca."]
+      },
+      {
+        id: "thumb_opposition_o",
+        title: "Oposición del pulgar dedo a dedo",
+        category: "MOTRICIDAD_FINA",
+        motionType: "THUMB_OPPOSITION",
+        difficulty: "Suave",
+        sets: 3, reps: 8, minutes: 4,
+        summary: "Secuencia precisa en la que el pulgar toca suavemente la yema de cada dedo formando un círculo limpio.",
+        pose: "Oposición precisa pulgar-dedo formando círculo",
+        posture: [
+          "Apoya el codo cómodo sobre la mesa con la palma mirando hacia ti.",
+          "Lleva el pulgar a tocar la yema del índice formando una O redonda.",
+          "Continúa con el dedo medio, anular y meñique en orden y sin apuro."
+        ],
+        phases: [
+          { label: "Tocar dedo", cue: "Une la yema del pulgar con el siguiente dedo", sec: 2, p: 1 },
+          { label: "Abrir mano", cue: "Extiende suavemente los dedos entre cada toque", sec: 2, p: 0 }
+        ],
+        warnings: ["Evita aplastar los dedos en pinza plana; busca redondear el arco."]
+      },
+      {
+        id: "pinch_lift_precision",
+        title: "Traslado de precisión con pinza",
+        category: "MOTRICIDAD_FINA",
+        motionType: "PINCH_CONTROL",
+        difficulty: "Suave",
+        sets: 2, reps: 10, minutes: 4,
+        summary: "Práctica de coordinación óculo-manual tomando objetos pequeños y ligeros de un lado a otro.",
+        pose: "Pinza fina controlada de pulgar e índice",
+        posture: [
+          "Coloca cinco objetos livianos sobre la mesa frente a ti.",
+          "Toma uno con la yema del pulgar e índice sin encoger el hombro.",
+          "Trasládalo suavemente unos centímetros y suéltalo con control."
+        ],
+        phases: [
+          { label: "Tomar con pinza", cue: "Sujeta el objeto ligero con pulgar e índice", sec: 3, p: 1 },
+          { label: "Soltar suave", cue: "Deposita y abre la pinza lentamente", sec: 3, p: 0 }
+        ],
+        warnings: ["No aprietes el objeto con fuerza excesiva."]
+      },
+      {
+        id: "finger_tapping_piano",
+        title: "Tecleo rítmico tipo piano",
+        category: "MOTRICIDAD_FINA",
+        motionType: "FINGER_SPREAD",
+        difficulty: "Suave",
+        sets: 3, reps: 10, minutes: 3,
+        summary: "Elevación y descenso individual de cada dedo sobre la mesa para despertar la independencia y coordinación.",
+        pose: "Mano arqueada sobre superficie con dedos alineados",
+        posture: [
+          "Apoya la palma ligeramente arqueada sobre la mesa, como si tocaras un piano.",
+          "Levanta un solo dedo a la vez sin arrastrar los demás.",
+          "Baja el dedo con suavidad antes de pasar al siguiente."
+        ],
+        phases: [
+          { label: "Elevar dedo", cue: "Eleva un dedo manteniendo los demás apoyados", sec: 2, p: 1 },
+          { label: "Apoyar suave", cue: "Desciende suavemente sobre la yema", sec: 2, p: 0 }
+        ],
+        warnings: ["No golpees la mesa con fuerza."]
+      },
+      {
+        id: "tendon_gliding_sequence",
+        title: "Deslizamiento tendinoso guiado",
+        category: "MOVILIDAD_DEDOS",
+        motionType: "TENDON_GLIDE",
+        difficulty: "Suave",
+        sets: 3, reps: 8, minutes: 5,
+        summary: "Secuencia clásica de mano recta a gancho y puño plano que favorece el deslizamiento suave de los tendones flexores.",
+        pose: "Transición suave entre mano abierta y puño relajado",
+        posture: [
+          "Comienza con la mano abierta, muñeca neutra y dedos juntos apuntando arriba.",
+          "Pasa a posición de gancho doblando solo las puntas de los dedos.",
+          "Continúa hacia puño plano sin apretar y regresa a mano abierta."
+        ],
+        phases: [
+          { label: "Mano recta", cue: "Extiende suavemente todos los dedos hacia arriba", sec: 2, p: 0 },
+          { label: "Posición gancho", cue: "Dobla solo las articulaciones medias y puntas", sec: 3, p: 0.55 },
+          { label: "Puño suave", cue: "Cierra en puño plano sin apretar", sec: 3, p: 1 }
+        ],
+        warnings: ["Realiza cada transición de forma lenta y continua, sin tirones."]
+      },
+      {
+        id: "hook_fist_glide",
+        title: "Garra suave (puño en gancho)",
+        category: "MOVILIDAD_DEDOS",
+        motionType: "HOOK_FIST",
+        difficulty: "Suave",
+        sets: 3, reps: 10, minutes: 3,
+        summary: "Movimiento focalizado en las articulaciones medias y distales de los dedos para reducir la rigidez matutina.",
+        pose: "Dedos en posición de gancho con nudillos extendidos",
+        posture: [
+          "Mantén la parte baja de los dedos (nudillos) extendida.",
+          "Dobla únicamente las dos articulaciones superiores formando un gancho suave.",
+          "Vuelve a estirar lentamente sintiendo la apertura de la palma."
+        ],
+        phases: [
+          { label: "Formar gancho", cue: "Dobla solo las puntas manteniendo nudillos rectos", sec: 3, p: 1 },
+          { label: "Sostener", cue: "Mantén la garra suave dos segundos", sec: 2, p: 1 },
+          { label: "Estirar dedos", cue: "Extiende suavemente hasta alinear los dedos", sec: 3, p: 0 }
+        ],
+        warnings: ["No cierres por completo la palma si el objetivo es aislar el gancho."]
+      },
+      {
+        id: "finger_fan_abduction",
+        title: "Abanico y cierre de dedos",
+        category: "MOVILIDAD_DEDOS",
+        motionType: "FINGER_SPREAD",
+        difficulty: "Suave",
+        sets: 3, reps: 10, minutes: 3,
+        summary: "Separación amplia y retorno simétrico de los dedos para movilizar la musculatura intrínseca de la palma.",
+        pose: "Mano abierta con dedos separados simétricamente",
+        posture: [
+          "Apoya el dorso de la mano o la palma cómodamente sobre la mesa.",
+          "Separa los cinco dedos todo lo que resulte cómodo, sin dolor.",
+          "Vuelve a juntar los dedos lentamente hasta tocar sus bordes."
+        ],
+        phases: [
+          { label: "Abrir abanico", cue: "Separa ampliamente todos los dedos", sec: 3, p: 1 },
+          { label: "Juntar dedos", cue: "Vuelve a juntar los dedos con suavidad", sec: 3, p: 0 }
+        ],
+        warnings: ["Evita doblar las puntas mientras separas los dedos."]
+      }
+    ];
+
+    const EBOOK_CHAPTERS = [
+      {
+        num: 1, title: "Cómo usar esta guía de rehabilitación de mano",
+        subtitle: "Principios de seguridad, ritmo y autocuidado", mins: 3,
+        takeaways: [
+          "La constancia suave supera siempre a la intensidad excesiva.",
+          "Cada mano y cada lesión tiene tiempos propios de recuperación.",
+          "Esta guía educativa acompaña tu práctica, pero no reemplaza una consulta presencial."
+        ],
+        body: [
+          "Recuperar la movilidad, la fuerza o la destreza de la mano requiere paciencia y movimientos conscientes. Antes de iniciar cualquier serie, prepara un espacio tranquilo, apoya el antebrazo sobre una superficie cómoda y respira profundo.",
+          "El criterio fundamental es la regla del confort controlado: puedes percibir una sensación suave de estiramiento o trabajo muscular, pero nunca dolor agudo, punzante, hormigueo nuevo ni inflamación posterior."
+        ],
+        safety: "Si tuviste cirugía reciente, fractura inmovilizada o dolor agudo, consulta con tu kinesiólogo o médico antes de elegir tu rutina."
+      },
+      {
+        num: 2, title: "Postura base y preparación de la muñeca",
+        subtitle: "Alineación del hombro, codo y antebrazo", mins: 4,
+        takeaways: [
+          "Apoyar el antebrazo reduce compensaciones en el hombro y cuello.",
+          "La muñeca neutra protege el túnel carpiano durante el movimiento de dedos.",
+          "El calor suave previo (según indicación profesional) puede ayudar ante rigidez matutina."
+        ],
+        body: [
+          "Muchos ejercicios fallan no por el movimiento de los dedos, sino porque el hombro o el cuello se tensan para compensar la falta de movilidad. Sentarse con la espalda apoyada y el antebrazo firme sobre una mesa cambia por completo la calidad del gesto.",
+          "Observa tu muñeca como un puente recto entre el antebrazo y los nudillos. Evita dejarla caer hacia los lados mientras practicas ejercicios de motricidad fina o pinza."
+        ]
+      },
+      {
+        num: 3, title: "Deslizamiento tendinoso y movilidad de dedos",
+        subtitle: "Secuencia progresiva sin carga", mins: 4,
+        takeaways: [
+          "La secuencia recta → mesa → gancho → puño plano moviliza planos distintos.",
+          "Las pausas de 2 segundos en cada postura favorecen el control neuromuscular.",
+          "Menos repeticiones bien hechas valen más que series rápidas."
+        ],
+        body: [
+          "Los tendones flexores recorren túneles estrechos desde el antebrazo hasta las puntas de los dedos. Alternar posiciones como la mesa (flexión de nudillos), el gancho y el puño plano ayuda a que cada tramo se deslice de forma armónica.",
+          "Mantén un ritmo pausado: cuenta mentalmente o activa la guía de voz en español dentro de cada ficha de ejercicio."
+        ]
+      },
+      {
+        num: 4, title: "Motricidad fina y actividades diarias",
+        subtitle: "Trasladar la práctica a gestos reales", mins: 3,
+        takeaways: [
+          "La pinza redondeada protege la articulación del pulgar.",
+          "Practicar 5 minutos con objetos livianos mejora la confianza cotidiana.",
+          "Alterna descansos breves para evitar fatiga de los músculos pequeños."
+        ],
+        body: [
+          "Abotonar una camisa, sostener una taza o girar una llave dependen de la coordinación entre el pulgar y el resto de los dedos. Entrenar la oposición formando círculos amplios prepara la mano sin sobrecarga.",
+          "Cuando realices ejercicios con objetos pequeños, elige piezas livianas y presta atención a la suavidad al soltar, no solo al agarrar."
+        ]
+      },
+      {
+        num: 5, title: "Cuándo detener un ejercicio y señales de alerta",
+        subtitle: "Criterios responsables de seguridad", mins: 3,
+        takeaways: [
+          "Detenerse a tiempo previene retrocesos e inflamación.",
+          "Registra tu nivel de molestia al terminar cada sesión para detectar tendencias.",
+          "Ante síntomas nuevos, prioriza una valoración profesional."
+        ],
+        body: [
+          "Detén la sesión de inmediato si aparece dolor agudo nuevo, sensación de corriente eléctrica, entumecimiento persistente, cambio marcado de coloración, aumento de hinchazón o mareos.",
+          "El registro en 'Mi progreso' permite observar si la molestia baja semana a semana o si conviene ajustar el volumen junto a tu especialista."
+        ],
+        safety: "Rehab Manos AI es una plataforma educativa y de acompañamiento. No realiza diagnósticos médicos ni sustituye evaluaciones presenciales."
+      }
+    ];
+
+    // Persistent Local State
+    const STORAGE_KEY = "rehab_manos_web_state_v1";
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (_) {}
+      const now = Date.now();
+      const dayMs = 86400000;
+      return {
+        routineIds: ["wrist_flex_ext", "tendon_gliding_sequence", "thumb_opposition_o"],
+        reminder: { enabled: false, hour: 9, minute: 0 },
+        voiceEnabled: true,
+        sessions: [
+          { id: "s1", exerciseId: "wrist_flex_ext", title: "Flexión y extensión de muñeca", category: "MOVILIDAD", reps: 10, sec: 120, pain: 2, ts: now - 3 * dayMs },
+          { id: "s2", exerciseId: "tendon_gliding_sequence", title: "Deslizamiento tendinoso guiado", category: "MOVILIDAD_DEDOS", reps: 8, sec: 150, pain: 1, ts: now - 1 * dayMs },
+          { id: "s3", exerciseId: "thumb_opposition_o", title: "Oposición del pulgar dedo a dedo", category: "MOTRICIDAD_FINA", reps: 8, sec: 110, pain: 1, ts: now }
+        ]
+      };
+    }
+    let state = loadState();
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+    }
+
+    let currentTab = "home";
+    let searchQuery = "";
+    let selectedCategory = null;
+    let routineOnly = false;
+    let activeChapterIdx = 0;
+    let activePhaseTimer = null;
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+
+    function normalizeText(str) {
+      return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    }
+
+    function greetingText() {
+      const h = new Date().getHours();
+      if (h < 12) return "Buenos días";
+      if (h < 20) return "Buenas tardes";
+      return "Buenas noches";
+    }
+
+    function setTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll("[data-tab]").forEach(el => {
+        el.classList.toggle("active", el.dataset.tab === tab);
+      });
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.querySelectorAll("[data-tab]").forEach(btn => {
+      btn.addEventListener("click", () => setTab(btn.dataset.tab));
+    });
+
+    function buildLast7Days() {
+      const days = [];
+      const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today.getTime() - i * 86400000);
+        const start = d.getTime();
+        const end = start + 86400000;
+        const count = state.sessions.filter(s => s.ts >= start && s.ts < end).length;
+        days.push({ label: i === 0 ? "Hoy" : dayNames[d.getDay()], count });
+      }
+      return days;
+    }
+
+    function renderHome() {
+      const routineExercises = state.routineIds.map(id => EXERCISES.find(e => e.id === id)).filter(Boolean);
+      const lastSession = state.sessions[0];
+      return `
+        <div class="hero-card">
+          <img src="/assets/img_hero_hand_rehab.jpg" alt="Rehabilitación guiada de mano" />
+          <div class="hero-overlay">
+            <span class="badge">Rehab Manos AI · Web & Android</span>
+            <h1 style="font-size:28px; margin-top:10px;">${greetingText()}</h1>
+            <p style="opacity:0.92; font-size:14px; margin-top:4px;">Cuida la movilidad, fuerza y destreza de tus manos con referencias reales y guía paso a paso.</p>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;">
+              <button class="btn btn-primary" onclick="setTab('exercises')">🖐️ Explorar ejercicios</button>
+              <button class="btn btn-outlined" style="background:rgba(255,255,255,0.92);" onclick="setTab('guide')">📖 Leer guía</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase;">Última actividad</div>
+              ${lastSession
+                ? `<div style="font-size:17px; font-weight:700; margin-top:2px;">${lastSession.title}</div>
+                   <div class="muted">${lastSession.reps} repeticiones · ${lastSession.sec} s · Molestia ${lastSession.pain}/10</div>`
+                : `<div style="font-size:16px; font-weight:700; margin-top:2px;">Listo para tu primera sesión</div>
+                   <div class="muted">Abre un ejercicio para iniciar tu seguimiento diario.</div>`
+              }
+            </div>
+            <button class="btn btn-outlined" onclick="setTab('progress')">Ver progreso</button>
+          </div>
+        </div>
+
+        <h2 class="section-title">Mi rutina recomendada (${routineExercises.length})</h2>
+        <div class="routine-row">
+          ${routineExercises.map(ex => `
+            <div class="routine-card" onclick="openExerciseModal('${ex.id}')">
+              <img src="${PHOTO_MAP[ex.motionType]}" alt="${ex.title}" />
+              <div class="routine-card-body">
+                <span class="badge ${CATEGORIES[ex.category].badge}">${CATEGORIES[ex.category].short}</span>
+                <div style="font-weight:700; font-size:15px; margin-top:8px;">${ex.title}</div>
+                <div class="muted" style="margin-top:4px;">${ex.sets} series · ${ex.reps} rep · ${ex.minutes} min</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <h2 class="section-title">Categorías terapéuticas</h2>
+        <div class="grid-2">
+          ${Object.values(CATEGORIES).map(cat => `
+            <div class="card" style="cursor:pointer;" onclick="selectedCategory='${cat.id}'; setTab('exercises');">
+              <span class="badge ${cat.badge}">${cat.short}</span>
+              <div style="font-weight:700; font-size:16px; margin-top:8px;">${cat.title}</div>
+              <div class="muted" style="margin-top:3px;">${cat.subtitle}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function getFilteredExercises() {
+      const tokens = normalizeText(searchQuery).split(/\s+/).filter(Boolean);
+      return EXERCISES.filter(ex => {
+        if (routineOnly && !state.routineIds.includes(ex.id)) return false;
+        if (selectedCategory && ex.category !== selectedCategory) return false;
+        if (!tokens.length) return true;
+        const cat = CATEGORIES[ex.category];
+        const haystack = normalizeText([ex.title, cat.short, cat.title, cat.subtitle, ex.difficulty, ex.summary].join(" "));
+        return tokens.every(t => haystack.includes(t));
+      });
+    }
+
+    function renderExercises() {
+      const filtered = getFilteredExercises();
+      const grouped = Object.values(CATEGORIES).map(cat => ({
+        cat,
+        items: filtered.filter(e => e.category === cat.id)
+      })).filter(g => g.items.length > 0);
+
+      return `
+        <h1 style="font-size:26px;">Biblioteca de Ejercicios</h1>
+        <p class="muted" style="margin-top:4px;">Filtra en tiempo real por nombre o categoría y practica con referencia de mano real.</p>
+
+        <div class="segmented" style="margin-top:14px;">
+          <button class="${!routineOnly ? 'active' : ''}" onclick="routineOnly=false; render()">Biblioteca (${EXERCISES.length})</button>
+          <button class="${routineOnly ? 'active' : ''}" onclick="routineOnly=true; render()">Mi rutina (${state.routineIds.length})</button>
+        </div>
+
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="search-box" class="search-input" type="text" placeholder="Buscar por nombre o categoría (ej. muñeca, fuerza, dedos)" value="${searchQuery.replace(/"/g, '&quot;')}" oninput="searchQuery=this.value; updateExerciseResults();" />
+          ${searchQuery ? `<button class="clear-search" onclick="searchQuery=''; render()" aria-label="Limpiar búsqueda">✕</button>` : ""}
+        </div>
+
+        <div class="chip-row">
+          <button class="chip ${selectedCategory === null ? 'active' : ''}" onclick="selectedCategory=null; render()">Todos</button>
+          ${Object.values(CATEGORIES).map(cat => `
+            <button class="chip ${selectedCategory === cat.id ? 'active' : ''}" onclick="selectedCategory=selectedCategory==='${cat.id}'?null:'${cat.id}'; render()">${cat.short}</button>
+          `).join("")}
+        </div>
+
+        <div id="exercise-results">${renderExerciseListHtml(grouped, filtered.length)}</div>
+      `;
+    }
+
+    function renderExerciseListHtml(grouped, count) {
+      if (count === 0) {
+        return `
+          <div class="card" style="text-align:center; padding:32px; margin-top:12px;">
+            <div style="font-size:28px;">🔎</div>
+            <h3 style="margin-top:8px;">Sin resultados</h3>
+            <p class="muted" style="margin-top:4px;">Prueba otro nombre o categoría (Movilidad, Fuerza, Motricidad, Dedos).</p>
+            <button class="btn btn-outlined" style="margin-top:14px;" onclick="searchQuery=''; selectedCategory=null; routineOnly=false; render();">Mostrar todos</button>
+          </div>
+        `;
+      }
+      return `
+        ${(searchQuery || selectedCategory) ? `<div class="muted" style="margin-bottom:8px;"><strong>${count}</strong> ejercicio${count === 1 ? "" : "s"} encontrado${count === 1 ? "" : "s"}</div>` : ""}
+        <div class="stack">
+          ${grouped.map(({ cat, items }) => `
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 8px;">
+                <div>
+                  <div style="font-weight:700; font-size:16px;">${cat.title}</div>
+                  <div class="muted" style="font-size:12px;">${cat.subtitle}</div>
+                </div>
+                <span class="badge ${cat.badge}">${cat.short} · ${items.length}</span>
+              </div>
+              <div class="stack">
+                ${items.map(ex => `
+                  <div class="exercise-card" onclick="openExerciseModal('${ex.id}')">
+                    <img class="exercise-thumb" src="${PHOTO_MAP[ex.motionType]}" alt="${ex.title}" />
+                    <div style="flex:1; min-width:0;">
+                      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        <span class="badge ${cat.badge}" style="font-size:11px; padding:3px 9px;">${cat.short}</span>
+                        <span class="muted" style="font-size:12px;">${ex.difficulty} · ${ex.minutes} min</span>
+                      </div>
+                      <div style="font-weight:700; font-size:15px; margin-top:5px;">${ex.title}</div>
+                      <div class="muted" style="font-size:13px; margin-top:2px;">${ex.summary}</div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function updateExerciseResults() {
+      const filtered = getFilteredExercises();
+      const grouped = Object.values(CATEGORIES).map(cat => ({
+        cat,
+        items: filtered.filter(e => e.category === cat.id)
+      })).filter(g => g.items.length > 0);
+      const container = document.getElementById("exercise-results");
+      if (container) container.innerHTML = renderExerciseListHtml(grouped, filtered.length);
+    }
+
+    function renderGuide() {
+      const ch = EBOOK_CHAPTERS[activeChapterIdx];
+      return `
+        <h1 style="font-size:26px;">Guía Educativa</h1>
+        <p class="muted" style="margin-top:4px;">Manual práctico de rehabilitación segura de mano (${EBOOK_CHAPTERS.length} capítulos)</p>
+
+        <div class="chip-row" style="margin-top:14px;">
+          ${EBOOK_CHAPTERS.map((c, idx) => `
+            <button class="chip ${idx === activeChapterIdx ? 'active' : ''}" onclick="activeChapterIdx=${idx}; render();">Cap. ${c.num}</button>
+          `).join("")}
+        </div>
+
+        <div class="card stack" style="margin-top:8px;">
+          <div>
+            <span class="badge">Capítulo ${ch.num} · ${ch.mins} min de lectura</span>
+            <h2 style="margin-top:10px; font-size:22px;">${ch.title}</h2>
+            <p class="muted" style="margin-top:4px;">${ch.subtitle}</p>
+          </div>
+
+          <div style="background:var(--surface-variant); border-radius:18px; padding:14px 16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">IDEAS CLAVE</div>
+            <ul style="padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
+              ${ch.takeaways.map(t => `<li>${t}</li>`).join("")}
+            </ul>
+          </div>
+
+          ${ch.body.map(p => `<p style="font-size:15px;">${p}</p>`).join("")}
+
+          ${ch.safety ? `<div class="safety-box"><strong>⚠️ Seguridad:</strong> ${ch.safety}</div>` : ""}
+
+          <div style="display:flex; justify-content:space-between; gap:10px; padding-top:6px;">
+            <button class="btn btn-outlined" ${activeChapterIdx === 0 ? "disabled" : ""} onclick="activeChapterIdx=Math.max(0, activeChapterIdx-1); render();">← Anterior</button>
+            <button class="btn btn-primary" ${activeChapterIdx === EBOOK_CHAPTERS.length - 1 ? "disabled" : ""} onclick="activeChapterIdx=Math.min(EBOOK_CHAPTERS.length-1, activeChapterIdx+1); render();">Siguiente →</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProgress() {
+      const days = buildLast7Days();
+      const total7d = days.reduce((a, d) => a + d.count, 0);
+      const activeDays = days.filter(d => d.count > 0).length;
+      const totalReps = state.sessions.reduce((a, s) => a + s.reps, 0);
+      const avgPain = state.sessions.length ? (state.sessions.reduce((a, s) => a + s.pain, 0) / state.sessions.length).toFixed(1) : "0.0";
+      const maxBar = Math.max(1, ...days.map(d => d.count));
+
+      return `
+        <h1 style="font-size:26px;">Mi Progreso</h1>
+        <p class="muted" style="margin-top:4px;">Comparativa diaria de ejercicios completados durante la última semana.</p>
+
+        <div class="kpi-grid" style="margin-top:14px;">
+          <div class="kpi-card"><div class="kpi-label">Últimos 7 días</div><div class="kpi-value">${total7d}</div></div>
+          <div class="kpi-card"><div class="kpi-label">Días activos</div><div class="kpi-value">${activeDays}/7</div></div>
+          <div class="kpi-card"><div class="kpi-label">Repeticiones</div><div class="kpi-value">${totalReps}</div></div>
+          <div class="kpi-card"><div class="kpi-label">Molestia prom.</div><div class="kpi-value">${avgPain}/10</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div>
+              <h3 style="font-size:17px;">Progreso semanal por día</h3>
+              <div class="muted" style="font-size:13px;">Ejercicios completados cada día de la última semana</div>
+            </div>
+            <span class="badge secondary">${total7d} en 7 días</span>
+          </div>
+
+          <div class="chart-container">
+            <div class="bars-grid">
+              ${days.map(d => {
+                const pct = d.count === 0 ? 4 : Math.max(18, Math.round((d.count / maxBar) * 100));
+                return `
+                  <div class="bar-col">
+                    <span style="font-size:12px; font-weight:700; color:${d.count > 0 ? 'var(--primary)' : 'var(--on-surface-variant)'}">${d.count}</span>
+                    <div class="bar-fill ${d.count === 0 ? 'empty' : ''}" style="height:${pct}%"></div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+            <div class="bar-labels">
+              ${days.map(d => `<span style="font-size:12px; font-weight:600; color:var(--on-surface-variant);">${d.label}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Historial reciente (${state.sessions.length})</h2>
+        <div class="stack">
+          ${state.sessions.map(s => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+              <div>
+                <span class="badge ${CATEGORIES[s.category]?.badge || ''}" style="font-size:11px; padding:3px 8px;">${CATEGORIES[s.category]?.short || 'Rehab'}</span>
+                <div style="font-weight:700; margin-top:6px;">${s.title}</div>
+                <div class="muted" style="font-size:13px;">${s.reps} rep · ${s.sec} s · Molestia ${s.pain}/10 · ${new Date(s.ts).toLocaleDateString('es-ES')}</div>
+              </div>
+              <button class="btn btn-outlined" style="min-height:38px; padding:6px 12px;" onclick="deleteSession('${s.id}')">🗑️</button>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderProfile() {
+      const rem = state.reminder;
+      const timeStr = `${String(rem.hour).padStart(2, '0')}:${String(rem.minute).padStart(2, '0')}`;
+      return `
+        <h1 style="font-size:26px;">Mi Perfil</h1>
+        <p class="muted" style="margin-top:4px;">Configura tus recordatorios diarios y preferencias de entrenamiento.</p>
+
+        <div class="stack" style="margin-top:14px;">
+          <div class="card stack">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+              <div>
+                <h3 style="font-size:16px;">🔔 Recordatorio diario de ejercicios</h3>
+                <div class="muted" style="font-size:13px;">${rem.enabled ? `Activo cada día a las ${timeStr} h` : "Desactivado"}</div>
+              </div>
+              <input type="checkbox" style="width:22px; height:22px; accent-color:var(--primary); cursor:pointer;" ${rem.enabled ? "checked" : ""} onchange="toggleReminder(this.checked)" />
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:var(--surface-variant); padding:12px 14px; border-radius:16px;">
+              <label for="reminder-time" style="font-weight:600; font-size:14px;">⏰ Hora programada:</label>
+              <input id="reminder-time" type="time" value="${timeStr}" onchange="updateReminderTime(this.value)" style="padding:8px 12px; border-radius:12px; border:1px solid var(--outline); font-size:15px; font-weight:700;" />
+              <div style="display:flex; gap:6px; margin-left:auto;">
+                ${["09:00", "13:00", "19:00"].map(t => `
+                  <button class="chip ${timeStr === t && rem.enabled ? 'active' : ''}" onclick="updateReminderTime('${t}', true)">${t} h</button>
+                `).join("")}
+              </div>
+            </div>
+
+            <button class="btn btn-outlined" onclick="testBrowserNotification()">Probar notificación en navegador</button>
+          </div>
+
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3 style="font-size:16px;">🔊 Voz explicativa en español</h3>
+              <div class="muted" style="font-size:13px;">Lectura automática de las fases del ejercicio</div>
+            </div>
+            <input type="checkbox" style="width:22px; height:22px; accent-color:var(--primary); cursor:pointer;" ${state.voiceEnabled ? "checked" : ""} onchange="state.voiceEnabled=this.checked; saveState(); showToast(this.checked ? 'Voz activada' : 'Voz desactivada');" />
+          </div>
+
+          <div class="safety-box">
+            <strong>Aviso educativo:</strong> Rehab Manos AI ofrece contenido educativo y seguimiento personal. No sustituye diagnóstico ni evaluación presencial por profesionales de salud.
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const root = document.getElementById("app-root");
+      if (currentTab === "home") root.innerHTML = renderHome();
+      else if (currentTab === "exercises") root.innerHTML = renderExercises();
+      else if (currentTab === "guide") root.innerHTML = renderGuide();
+      else if (currentTab === "progress") root.innerHTML = renderProgress();
+      else if (currentTab === "profile") root.innerHTML = renderProfile();
+    }
+
+    // Modal & Exercise Runner
+    window.openExerciseModal = function(id) {
+      const ex = EXERCISES.find(e => e.id === id);
+      if (!ex) return;
+      clearInterval(activePhaseTimer);
+      let viewMode = "photo";
+      let phaseIdx = 0;
+      let running = false;
+
+      const modal = document.getElementById("exercise-modal");
+      const content = document.getElementById("modal-content");
+      modal.classList.add("open");
+
+      function paintModal() {
+        const inRoutine = state.routineIds.includes(ex.id);
+        const phase = ex.phases[phaseIdx];
+        content.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <span class="badge ${CATEGORIES[ex.category].badge}">${CATEGORIES[ex.category].short} · ${ex.difficulty}</span>
+            <button class="btn btn-outlined" style="min-height:38px; padding:6px 12px;" onclick="closeExerciseModal()">✕ Cerrar</button>
+          </div>
+          <h2 style="font-size:22px; margin-top:10px;">${ex.title}</h2>
+          <p class="muted" style="margin-top:4px;">${ex.summary}</p>
+
+          <div class="segmented" style="margin:14px 0;">
+            <button class="${viewMode === 'photo' ? 'active' : ''}" id="mode-photo">Mano real</button>
+            <button class="${viewMode === 'anim' ? 'active' : ''}" id="mode-anim">Guía animada</button>
+          </div>
+
+          <div class="demo-stage">
+            ${viewMode === "photo"
+              ? `<img src="${PHOTO_MAP[ex.motionType]}" alt="${ex.title}" />
+                 <div class="demo-caption">Referencia real: ${ex.pose}</div>`
+              : `<svg viewBox="0 0 220 180" width="220" height="170" aria-label="Animación guiada de mano">
+                   <g transform="translate(110, 145) rotate(${phase.p * -22})">
+                     <rect x="-24" y="-58" width="48" height="58" rx="18" fill="#CDEEEB" stroke="#0B6D6C" stroke-width="3"/>
+                     ${[-18, -6, 6, 18].map((x, idx) => `
+                       <rect x="${x - 4}" y="${-58 - 44 + phase.p * (idx * 4 + 14)}" width="8" height="${44 - phase.p * 12}" rx="4" fill="#0B6D6C"/>
+                     `).join("")}
+                     <rect x="-34" y="-34" width="16" height="9" rx="4.5" transform="rotate(${-30 + phase.p * 25}, -24, -30)" fill="#3E7B67"/>
+                   </g>
+                 </svg>
+                 <div class="demo-caption" style="background:rgba(11,109,108,0.88);">Fase ${phaseIdx + 1}/${ex.phases.length}: ${phase.label} — "${phase.cue}"</div>`
+            }
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="flex:1;" id="btn-toggle-run">${running ? "⏸️ Pausar guía" : "▶️ Iniciar guía"}</button>
+            <button class="btn btn-outlined" id="btn-toggle-routine">${inRoutine ? "✓ En Mi rutina" : "+ Agregar a rutina"}</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:6px;">Indicaciones de postura</div>
+            <ol style="padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13.5px;">
+              ${ex.posture.map(p => `<li>${p}</li>`).join("")}
+            </ol>
+          </div>
+
+          <div class="safety-box" style="margin-top:12px;">
+            <strong>Precauciones:</strong> ${ex.warnings.join(" ")}
+          </div>
+
+          <button class="btn btn-primary" style="width:100%; margin-top:14px; background:var(--tertiary);" id="btn-complete-session">✓ Marcar sesión completada (+1 hoy)</button>
+        `;
+
+        document.getElementById("mode-photo").onclick = () => { viewMode = "photo"; paintModal(); };
+        document.getElementById("mode-anim").onclick = () => { viewMode = "anim"; paintModal(); };
+        document.getElementById("btn-toggle-routine").onclick = () => {
+          if (state.routineIds.includes(ex.id)) {
+            state.routineIds = state.routineIds.filter(r => r !== ex.id);
+            showToast("Quitado de Mi rutina.");
+          } else {
+            state.routineIds.push(ex.id);
+            showToast("Agregado a Mi rutina.");
+          }
+          saveState();
+          paintModal();
+          if (currentTab === "home" || currentTab === "exercises") render();
+        };
+        document.getElementById("btn-toggle-run").onclick = () => {
+          running = !running;
+          if (running) {
+            viewMode = "anim";
+            speakCue(ex.phases[phaseIdx].cue);
+            activePhaseTimer = setInterval(() => {
+              phaseIdx = (phaseIdx + 1) % ex.phases.length;
+              speakCue(ex.phases[phaseIdx].cue);
+              paintModal();
+            }, 3000);
+          } else {
+            clearInterval(activePhaseTimer);
+          }
+          paintModal();
+        };
+        document.getElementById("btn-complete-session").onclick = () => {
+          state.sessions.unshift({
+            id: "s_" + Date.now(),
+            exerciseId: ex.id,
+            title: ex.title,
+            category: ex.category,
+            reps: ex.reps,
+            sec: ex.minutes * 45,
+            pain: 1,
+            ts: Date.now()
+          });
+          saveState();
+          closeExerciseModal();
+          showToast("¡Sesión registrada en Mi Progreso!");
+          render();
+        };
+      }
+      paintModal();
+    };
+
+    window.closeExerciseModal = function() {
+      clearInterval(activePhaseTimer);
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      document.getElementById("exercise-modal").classList.remove("open");
+    };
+
+    document.getElementById("exercise-modal").addEventListener("click", (e) => {
+      if (e.target.id === "exercise-modal") closeExerciseModal();
+    });
+
+    function speakCue(text) {
+      if (!state.voiceEnabled || !("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "es-ES";
+        u.rate = 0.95;
+        window.speechSynthesis.speak(u);
+      } catch (_) {}
+    }
+
+    window.deleteSession = function(id) {
+      state.sessions = state.sessions.filter(s => s.id !== id);
+      saveState();
+      showToast("Sesión eliminada.");
+      render();
+    };
+
+    window.toggleReminder = function(enabled) {
+      state.reminder.enabled = enabled;
+      saveState();
+      showToast(enabled
+        ? `Recordatorio activado a las ${String(state.reminder.hour).padStart(2,'0')}:${String(state.reminder.minute).padStart(2,'0')} h`
+        : "Recordatorio diario desactivado");
+      render();
+    };
+
+    window.updateReminderTime = function(val, forceEnable = false) {
+      const [h, m] = val.split(":").map(Number);
+      if (!Number.isNaN(h) && !Number.isNaN(m)) {
+        state.reminder.hour = h;
+        state.reminder.minute = m;
+        if (forceEnable) state.reminder.enabled = true;
+        saveState();
+        showToast(`Hora configurada: ${val} h`);
+        render();
+      }
+    };
+
+    window.testBrowserNotification = async function() {
+      if (!("Notification" in window)) {
+        showToast("Tu navegador no soporta notificaciones locales; usa la app Android.");
+        return;
+      }
+      const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (perm === "granted") {
+        new Notification("Rehab Manos AI — Hora de tu rutina", {
+          body: "Dedica unos minutos a tus ejercicios guiados de rehabilitación."
+        });
+        showToast("Notificación de prueba enviada.");
+      } else {
+        showToast("Permiso de notificaciones denegado en el navegador.");
+      }
+    };
+
+    render();
+  </script>
+</body>
+</html>
