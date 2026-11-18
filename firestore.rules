@@ -1,0 +1,296 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCategory(cat) {
+      return cat in ['MOVILIDAD', 'FORTALECIMIENTO', 'MOTRICIDAD_FINA', 'MOVILIDAD_DEDOS'];
+    }
+
+    function isValidUserRehabProfile(data, userId) {
+      return data.userId == userId &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 60 &&
+             data.affectedHand in ['DERECHA', 'IZQUIERDA', 'AMBAS'] &&
+             data.primaryGoal in ['MOVILIDAD', 'FUERZA', 'MOTRICIDAD_FINA', 'RECUPERACION_SUAVE'] &&
+             (!('clinicalContext' in data) || (data.clinicalContext is string && data.clinicalContext.size() <= 300)) &&
+             data.recentSurgeryOrAcutePain is bool &&
+             data.voiceCoachEnabled is bool &&
+             (!('dailyReminderEnabled' in data) || data.dailyReminderEnabled is bool) &&
+             (!('reminderHour' in data) || (data.reminderHour is int && data.reminderHour >= 0 && data.reminderHour <= 23)) &&
+             (!('reminderMinute' in data) || (data.reminderMinute is int && data.reminderMinute >= 0 && data.reminderMinute <= 59)) &&
+             data.intakeCompleted is bool;
+    }
+
+    function isValidRoutineItem(data, userId) {
+      return data.userId == userId &&
+             data.exerciseId is string &&
+             data.exerciseId.size() >= 2 &&
+             data.exerciseId.size() <= 64 &&
+             data.exerciseId.matches('^[a-zA-Z0-9_\\-]+$') &&
+             data.exerciseTitle is string &&
+             data.exerciseTitle.size() >= 2 &&
+             data.exerciseTitle.size() <= 100 &&
+             isValidCategory(data.categoryId) &&
+             data.targetSets is int &&
+             data.targetSets >= 1 &&
+             data.targetSets <= 10 &&
+             data.targetReps is int &&
+             data.targetReps >= 1 &&
+             data.targetReps <= 50 &&
+             data.assignedBy is string &&
+             data.assignedBy.size() >= 1 &&
+             data.assignedBy.size() <= 60 &&
+             data.active is bool;
+    }
+
+    function isValidExerciseSession(data, userId) {
+      return data.userId == userId &&
+             data.exerciseId is string &&
+             data.exerciseId.size() >= 2 &&
+             data.exerciseId.size() <= 64 &&
+             data.exerciseId.matches('^[a-zA-Z0-9_\\-]+$') &&
+             data.exerciseTitle is string &&
+             data.exerciseTitle.size() >= 2 &&
+             data.exerciseTitle.size() <= 100 &&
+             isValidCategory(data.categoryId) &&
+             data.completedReps is int &&
+             data.completedReps >= 1 &&
+             data.completedReps <= 200 &&
+             data.durationSeconds is int &&
+             data.durationSeconds >= 5 &&
+             data.durationSeconds <= 3600 &&
+             data.painLevel is int &&
+             data.painLevel >= 0 &&
+             data.painLevel <= 10 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+             data.usedVoiceGuide is bool;
+    }
+
+    function isValidRehabExercise(data, exerciseId) {
+      return data.exerciseId == exerciseId &&
+             data.exerciseId is string &&
+             data.exerciseId.size() >= 2 &&
+             data.exerciseId.size() <= 64 &&
+             data.exerciseId.matches('^[a-zA-Z0-9_\\-]+$') &&
+             data.title is string &&
+             data.title.size() >= 2 &&
+             data.title.size() <= 100 &&
+             isValidCategory(data.categoryId) &&
+             data.motionType in [
+               'TENDON_GLIDE', 'WRIST_FLEX_EXT', 'FINGER_SPREAD', 'THUMB_OPPOSITION',
+               'GRIP_SQUEEZE', 'PINCH_CONTROL', 'TABLETOP_FLEX', 'HOOK_FIST'
+             ] &&
+             data.difficultyLabel is string &&
+             data.difficultyLabel.size() >= 2 &&
+             data.difficultyLabel.size() <= 30 &&
+             data.suggestedSets is int &&
+             data.suggestedSets >= 1 &&
+             data.suggestedSets <= 10 &&
+             data.suggestedReps is int &&
+             data.suggestedReps >= 1 &&
+             data.suggestedReps <= 50 &&
+             data.suggestedMinutes is int &&
+             data.suggestedMinutes >= 1 &&
+             data.suggestedMinutes <= 60 &&
+             data.sortOrder is int &&
+             data.sortOrder >= 0 &&
+             data.sortOrder <= 1000 &&
+             data.summary is string &&
+             data.summary.size() >= 5 &&
+             data.summary.size() <= 400 &&
+             data.postureInstructions is list &&
+             data.postureInstructions.size() >= 1 &&
+             data.postureInstructions.size() <= 10 &&
+             data.postureInstructions[0] is string &&
+             data.phases is list &&
+             data.phases.size() >= 1 &&
+             data.phases.size() <= 8 &&
+             data.phases[0] is map &&
+             data.avoidWarnings is list &&
+             data.avoidWarnings.size() >= 1 &&
+             data.avoidWarnings.size() <= 10 &&
+             data.avoidWarnings[0] is string &&
+             data.recommendedForGoals is list &&
+             data.recommendedForGoals.size() >= 1 &&
+             data.recommendedForGoals.size() <= 4 &&
+             data.recommendedForGoals[0] is string &&
+             data.visionTargetPoseName is string &&
+             data.visionTargetPoseName.size() >= 2 &&
+             data.visionTargetPoseName.size() <= 150 &&
+             data.published is bool &&
+             data.published == true &&
+             data.createdBy is string &&
+             data.createdBy == request.auth.uid;
+    }
+
+    match /exercises/{exerciseId} {
+      allow get: if isSignedIn() && isValidId(exerciseId) && existing().published == true;
+      allow list: if isSignedIn() && existing().published == true;
+
+      allow create: if isSignedIn() &&
+                       isValidId(exerciseId) &&
+                       incoming().keys().hasAll([
+                         'exerciseId', 'title', 'categoryId', 'motionType',
+                         'difficultyLabel', 'suggestedSets', 'suggestedReps', 'suggestedMinutes',
+                         'sortOrder', 'summary', 'postureInstructions', 'phases',
+                         'avoidWarnings', 'recommendedForGoals', 'visionTargetPoseName',
+                         'published', 'createdBy', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'exerciseId', 'title', 'categoryId', 'motionType',
+                         'difficultyLabel', 'suggestedSets', 'suggestedReps', 'suggestedMinutes',
+                         'sortOrder', 'summary', 'postureInstructions', 'phases',
+                         'avoidWarnings', 'recommendedForGoals', 'visionTargetPoseName',
+                         'published', 'createdBy', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidRehabExercise(incoming(), exerciseId);
+
+      allow update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'affectedHand', 'primaryGoal',
+                         'recentSurgeryOrAcutePain', 'voiceCoachEnabled', 'intakeCompleted',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'affectedHand', 'primaryGoal',
+                         'clinicalContext', 'recentSurgeryOrAcutePain', 'voiceCoachEnabled',
+                         'dailyReminderEnabled', 'reminderHour', 'reminderMinute',
+                         'intakeCompleted', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidUserRehabProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserRehabProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'affectedHand', 'primaryGoal', 'clinicalContext',
+                         'recentSurgeryOrAcutePain', 'voiceCoachEnabled',
+                         'dailyReminderEnabled', 'reminderHour', 'reminderMinute',
+                         'intakeCompleted', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /routine/{routineItemId} {
+        allow get: if isOwner(userId) && isValidId(routineItemId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(routineItemId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'exerciseId', 'exerciseTitle', 'categoryId',
+                           'targetSets', 'targetReps', 'assignedBy', 'active',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'exerciseId', 'exerciseTitle', 'categoryId',
+                           'targetSets', 'targetReps', 'assignedBy', 'active',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp &&
+                         incoming().updatedAt <= request.time &&
+                         isValidRoutineItem(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(routineItemId) &&
+                         isValidRoutineItem(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().exerciseId == existing().exerciseId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp &&
+                         incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'targetSets', 'targetReps', 'assignedBy', 'active', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(routineItemId);
+      }
+
+      match /sessions/{sessionId} {
+        allow get: if isOwner(userId) && isValidId(sessionId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(sessionId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'exerciseId', 'exerciseTitle', 'categoryId',
+                           'completedReps', 'durationSeconds', 'painLevel',
+                           'usedVoiceGuide', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'exerciseId', 'exerciseTitle', 'categoryId',
+                           'completedReps', 'durationSeconds', 'painLevel', 'notes',
+                           'usedVoiceGuide', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp &&
+                         incoming().updatedAt <= request.time &&
+                         isValidExerciseSession(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(sessionId) &&
+                         isValidExerciseSession(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().exerciseId == existing().exerciseId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp &&
+                         incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'painLevel', 'notes', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(sessionId);
+      }
+    }
+  }
+}

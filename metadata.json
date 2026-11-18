@@ -1,0 +1,6 @@
+{
+  "name": "Rehab Manos AI",
+  "description": "Plataforma inteligente para aprender, practicar y hacer seguimiento de ejercicios de rehabilitación de mano.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

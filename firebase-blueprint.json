@@ -1,0 +1,339 @@
+{
+  "entities": {
+    "UserRehabProfile": {
+      "title": "UserRehabProfile",
+      "description": "Ficha inicial y preferencias del usuario en Rehab Manos AI.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID autenticado del usuario propietario."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Nombre visible del usuario."
+        },
+        "affectedHand": {
+          "type": "string",
+          "enum": ["DERECHA", "IZQUIERDA", "AMBAS"],
+          "description": "Mano principal de trabajo."
+        },
+        "primaryGoal": {
+          "type": "string",
+          "enum": ["MOVILIDAD", "FUERZA", "MOTRICIDAD_FINA", "RECUPERACION_SUAVE"],
+          "description": "Objetivo principal de la rutina."
+        },
+        "clinicalContext": {
+          "type": "string",
+          "description": "Observaciones o limitaciones indicadas por el usuario o profesional."
+        },
+        "recentSurgeryOrAcutePain": {
+          "type": "boolean",
+          "description": "Indica si existen signos recientes que requieren evaluación presencial."
+        },
+        "voiceCoachEnabled": {
+          "type": "boolean",
+          "description": "Preferencia de guía por voz en español."
+        },
+        "dailyReminderEnabled": {
+          "type": "boolean",
+          "description": "Indica si el recordatorio diario local está activo."
+        },
+        "reminderHour": {
+          "type": "integer",
+          "description": "Hora configurada (0-23) para el recordatorio diario."
+        },
+        "reminderMinute": {
+          "type": "integer",
+          "description": "Minuto configurado (0-59) para el recordatorio diario."
+        },
+        "intakeCompleted": {
+          "type": "boolean",
+          "description": "Indica si el usuario completó su ficha inicial."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de creación asignada por FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de actualización asignada por FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "affectedHand",
+        "primaryGoal",
+        "recentSurgeryOrAcutePain",
+        "voiceCoachEnabled",
+        "intakeCompleted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RoutineItem": {
+      "title": "RoutineItem",
+      "description": "Ejercicio incluido en la rutina asignada o personalizada del usuario.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID del propietario de la rutina."
+        },
+        "exerciseId": {
+          "type": "string",
+          "description": "Identificador del ejercicio del catálogo."
+        },
+        "exerciseTitle": {
+          "type": "string",
+          "description": "Nombre del ejercicio."
+        },
+        "categoryId": {
+          "type": "string",
+          "enum": ["MOVILIDAD", "FORTALECIMIENTO", "MOTRICIDAD_FINA", "MOVILIDAD_DEDOS"],
+          "description": "Categoría terapéutica del ejercicio."
+        },
+        "targetSets": {
+          "type": "integer",
+          "description": "Cantidad de series sugeridas."
+        },
+        "targetReps": {
+          "type": "integer",
+          "description": "Cantidad de repeticiones por serie."
+        },
+        "assignedBy": {
+          "type": "string",
+          "description": "Origen de la asignación (programa inicial o profesional)."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Si el ejercicio está activo en la rutina actual."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de creación asignada por FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de actualización asignada por FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "exerciseId",
+        "exerciseTitle",
+        "categoryId",
+        "targetSets",
+        "targetReps",
+        "assignedBy",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExerciseSession": {
+      "title": "ExerciseSession",
+      "description": "Registro de una sesión de ejercicio completada por el usuario.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID del usuario que completó la sesión."
+        },
+        "exerciseId": {
+          "type": "string",
+          "description": "Identificador del ejercicio realizado."
+        },
+        "exerciseTitle": {
+          "type": "string",
+          "description": "Nombre del ejercicio realizado."
+        },
+        "categoryId": {
+          "type": "string",
+          "enum": ["MOVILIDAD", "FORTALECIMIENTO", "MOTRICIDAD_FINA", "MOVILIDAD_DEDOS"],
+          "description": "Categoría del ejercicio."
+        },
+        "completedReps": {
+          "type": "integer",
+          "description": "Repeticiones completadas en la sesión."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Duración de la sesión en segundos."
+        },
+        "painLevel": {
+          "type": "integer",
+          "description": "Nivel de molestia reportado al finalizar (0 a 10)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notas opcionales del usuario sobre su sensación."
+        },
+        "usedVoiceGuide": {
+          "type": "boolean",
+          "description": "Indica si utilizó la guía por voz en español."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de creación asignada por FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de actualización asignada por FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "exerciseId",
+        "exerciseTitle",
+        "categoryId",
+        "completedReps",
+        "durationSeconds",
+        "painLevel",
+        "usedVoiceGuide",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RehabExercise": {
+      "title": "RehabExercise",
+      "description": "Ejercicio guiado de rehabilitación de mano en la biblioteca compartida.",
+      "type": "object",
+      "properties": {
+        "exerciseId": {
+          "type": "string",
+          "description": "Identificador estable del ejercicio."
+        },
+        "title": {
+          "type": "string",
+          "description": "Nombre del ejercicio."
+        },
+        "categoryId": {
+          "type": "string",
+          "enum": ["MOVILIDAD", "FORTALECIMIENTO", "MOTRICIDAD_FINA", "MOVILIDAD_DEDOS"],
+          "description": "Categoría terapéutica (Movilidad, Fuerza, Motricidad, Dedos)."
+        },
+        "motionType": {
+          "type": "string",
+          "description": "Tipo de animación de mano para demostración nivel 1."
+        },
+        "difficultyLabel": {
+          "type": "string",
+          "description": "Nivel de dificultad (Suave, Moderado)."
+        },
+        "suggestedSets": {
+          "type": "integer",
+          "description": "Series sugeridas."
+        },
+        "suggestedReps": {
+          "type": "integer",
+          "description": "Repeticiones sugeridas."
+        },
+        "suggestedMinutes": {
+          "type": "integer",
+          "description": "Duración estimada en minutos."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "description": "Orden de visualización en la biblioteca."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Resumen breve del objetivo del ejercicio."
+        },
+        "postureInstructions": {
+          "type": "array",
+          "description": "Indicaciones paso a paso de postura."
+        },
+        "phases": {
+          "type": "array",
+          "description": "Fases animadas y guía por voz."
+        },
+        "avoidWarnings": {
+          "type": "array",
+          "description": "Advertencias de movimientos que deben evitarse."
+        },
+        "recommendedForGoals": {
+          "type": "array",
+          "description": "Objetivos de rehabilitación recomendados."
+        },
+        "visionTargetPoseName": {
+          "type": "string",
+          "description": "Postura objetivo para revisión con IA visual."
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Indica si el ejercicio está publicado en la biblioteca."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID del usuario autenticado que inicializó el documento."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de creación asignada por FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Fecha de actualización asignada por FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "exerciseId",
+        "title",
+        "categoryId",
+        "motionType",
+        "difficultyLabel",
+        "suggestedSets",
+        "suggestedReps",
+        "suggestedMinutes",
+        "sortOrder",
+        "summary",
+        "postureInstructions",
+        "phases",
+        "avoidWarnings",
+        "recommendedForGoals",
+        "visionTargetPoseName",
+        "published",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/exercises/{exerciseId}": {
+      "schema": {
+        "$ref": "#/entities/RehabExercise"
+      },
+      "description": "Catálogo de ejercicios categorizados de la biblioteca."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserRehabProfile"
+      },
+      "description": "Ficha inicial, objetivos, contexto clínico y preferencias por usuario."
+    },
+    "/users/{userId}/routine/{routineItemId}": {
+      "schema": {
+        "$ref": "#/entities/RoutineItem"
+      },
+      "description": "Ejercicios activos dentro de la rutina personalizada del usuario."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/ExerciseSession"
+      },
+      "description": "Historial de sesiones completadas y nivel de molestia por usuario."
+    }
+  }
+}

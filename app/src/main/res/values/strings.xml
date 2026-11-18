@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Rehab Manos AI</string>
+    <string name="notification_channel_daily_name">Recordatorios diarios</string>
+    <string name="notification_channel_daily_desc">Avisos diarios para realizar tus ejercicios de rehabilitación de manos.</string>
+    <string name="daily_reminder_title">Hora de cuidar tus manos</string>
+    <string name="daily_reminder_title_personalized">%1$s, es hora de tu rutina</string>
+    <string name="daily_reminder_body">Dedica unos minutos a tus ejercicios guiados de rehabilitación.</string>
+</resources>
