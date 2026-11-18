@@ -29,11 +29,17 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -67,13 +73,26 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
-private data class WeeklySessionBucket(
+data class DailySessionBucket(
+    val dayStartMillis: Long,
+    val label: String,
+    val completedExercises: Int,
+    val totalReps: Long
+)
+
+data class WeeklySessionBucket(
     val weekStartMillis: Long,
     val label: String,
     val sessionCount: Int,
     val totalReps: Long
 )
+
+private enum class ProgressChartMode {
+    DAILY_LAST_WEEK,
+    WEEKLY_HISTORY
+}
 
 @Composable
 fun ProgressScreen(
@@ -85,6 +104,7 @@ fun ProgressScreen(
     val dateFormatter = remember {
         SimpleDateFormat("dd MMM · HH:mm", Locale("es", "ES"))
     }
+    var chartMode by remember { mutableStateOf(ProgressChartMode.DAILY_LAST_WEEK) }
 
     when (sessionsState) {
         is UiState.Loading -> {
@@ -115,6 +135,9 @@ fun ProgressScreen(
         }
         is UiState.Success -> {
             val sessions = sessionsState.data
+            val dailyBuckets = remember(sessions) {
+                buildLast7DaysBuckets(sessions)
+            }
             val weeklyBuckets = remember(sessions) {
                 buildWeeklyBuckets(sessions, weeksCount = 6)
             }
@@ -132,7 +155,7 @@ fun ProgressScreen(
                             style = MaterialTheme.typography.headlineMedium
                         )
                         Text(
-                            text = "Sesiones completadas por semana, repeticiones y evolución de comodidad",
+                            text = "Progreso diario de la última semana, repeticiones y evolución de comodidad",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -204,7 +227,7 @@ fun ProgressScreen(
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
-                                    text = "Completa tu primer ejercicio guiado para ver aquí tu gráfico semanal, repeticiones y comodidad.",
+                                    text = "Completa tu primer ejercicio guiado para comparar aquí tus ejercicios diarios de la última semana.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -224,7 +247,8 @@ fun ProgressScreen(
                 } else {
                     val totalReps = sessions.sumOf { it.completedReps }
                     val avgPain = sessions.map { it.painLevel }.average()
-                    val currentWeekSessions = weeklyBuckets.lastOrNull()?.sessionCount ?: 0
+                    val last7DaysTotal = dailyBuckets.sumOf { it.completedExercises }
+                    val activeDaysLastWeek = dailyBuckets.count { it.completedExercises > 0 }
 
                     item {
                         Row(
@@ -234,13 +258,13 @@ fun ProgressScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             KpiCard(
-                                label = "Esta semana",
-                                value = "$currentWeekSessions",
+                                label = "Últimos 7 días",
+                                value = "$last7DaysTotal",
                                 modifier = Modifier.weight(1f)
                             )
                             KpiCard(
-                                label = "Sesiones",
-                                value = "${sessions.size}",
+                                label = "Días activos",
+                                value = "$activeDaysLastWeek/7",
                                 modifier = Modifier.weight(1f)
                             )
                             KpiCard(
@@ -256,7 +280,7 @@ fun ProgressScreen(
                         }
                     }
 
-                    // Gráfico semanal de sesiones completadas (Vico Compose M3)
+                    // Gráfico de progreso semanal (Vico Compose M3: día a día de la última semana / comparativa semanal)
                     item {
                         Card(
                             modifier = Modifier
@@ -292,22 +316,36 @@ fun ProgressScreen(
                                         Spacer(Modifier.width(10.dp))
                                         Column {
                                             Text(
-                                                text = "Sesiones completadas por semana",
+                                                text = if (chartMode == ProgressChartMode.DAILY_LAST_WEEK) {
+                                                    "Progreso semanal por día"
+                                                } else {
+                                                    "Sesiones completadas por semana"
+                                                },
                                                 style = MaterialTheme.typography.titleMedium
                                             )
                                             Text(
-                                                text = "Últimas ${weeklyBuckets.size} semanas",
+                                                text = if (chartMode == ProgressChartMode.DAILY_LAST_WEEK) {
+                                                    "Ejercicios completados cada día de la última semana"
+                                                } else {
+                                                    "Comparativa de las últimas ${weeklyBuckets.size} semanas"
+                                                },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    val badgeCount = if (chartMode == ProgressChartMode.DAILY_LAST_WEEK) {
+                                        "$last7DaysTotal en 7 días"
+                                    } else {
+                                        "${weeklyBuckets.lastOrNull()?.sessionCount ?: 0} esta sem."
                                     }
                                     Surface(
                                         shape = MaterialTheme.shapes.small,
                                         color = MaterialTheme.colorScheme.secondaryContainer
                                     ) {
                                         Text(
-                                            text = "$currentWeekSessions esta sem.",
+                                            text = badgeCount,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -315,13 +353,46 @@ fun ProgressScreen(
                                     }
                                 }
 
+                                Spacer(Modifier.height(12.dp))
+
+                                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                    SegmentedButton(
+                                        selected = chartMode == ProgressChartMode.DAILY_LAST_WEEK,
+                                        onClick = { chartMode = ProgressChartMode.DAILY_LAST_WEEK },
+                                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                        modifier = Modifier.testTag("chart_mode_daily_7d")
+                                    ) {
+                                        Text("Últimos 7 días")
+                                    }
+                                    SegmentedButton(
+                                        selected = chartMode == ProgressChartMode.WEEKLY_HISTORY,
+                                        onClick = { chartMode = ProgressChartMode.WEEKLY_HISTORY },
+                                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                        modifier = Modifier.testTag("chart_mode_weekly_6w")
+                                    ) {
+                                        Text("Por semana")
+                                    }
+                                }
+
                                 Spacer(Modifier.height(14.dp))
 
-                                WeeklySessionsBarChart(
-                                    buckets = weeklyBuckets,
+                                val labels = if (chartMode == ProgressChartMode.DAILY_LAST_WEEK) {
+                                    dailyBuckets.map { it.label }
+                                } else {
+                                    weeklyBuckets.map { it.label }
+                                }
+                                val values = if (chartMode == ProgressChartMode.DAILY_LAST_WEEK) {
+                                    dailyBuckets.map { it.completedExercises }
+                                } else {
+                                    weeklyBuckets.map { it.sessionCount }
+                                }
+
+                                VicoColumnProgressChart(
+                                    labels = labels,
+                                    values = values,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(210.dp)
+                                        .height(215.dp)
                                         .testTag("weekly_sessions_vico_chart")
                                 )
 
@@ -331,23 +402,23 @@ fun ProgressScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    weeklyBuckets.forEach { bucket ->
+                                    labels.zip(values).forEach { (label, count) ->
                                         Column(
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = "${bucket.sessionCount}",
+                                                text = "$count",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
-                                                color = if (bucket.sessionCount > 0) {
+                                                color = if (count > 0) {
                                                     MaterialTheme.colorScheme.primary
                                                 } else {
                                                     MaterialTheme.colorScheme.onSurfaceVariant
                                                 }
                                             )
                                             Text(
-                                                text = bucket.label,
+                                                text = label,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -478,31 +549,32 @@ fun ProgressScreen(
 }
 
 @Composable
-private fun WeeklySessionsBarChart(
-    buckets: List<WeeklySessionBucket>,
+private fun VicoColumnProgressChart(
+    labels: List<String>,
+    values: List<Int>,
     modifier: Modifier = Modifier
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
-    val counts = remember(buckets) { buckets.map { it.sessionCount } }
 
-    LaunchedEffect(counts) {
+    LaunchedEffect(values) {
         modelProducer.runTransaction {
             columnSeries {
-                series(counts)
+                series(values)
             }
         }
     }
 
     val barColor = MaterialTheme.colorScheme.primary
-    val bottomAxisFormatter = remember(buckets) {
+    val bottomAxisFormatter = remember(labels) {
         CartesianValueFormatter { _, value, _ ->
             val index = value.toInt()
-            buckets.getOrNull(index)?.label ?: " "
+            labels.getOrNull(index) ?: " "
         }
     }
     val startAxisFormatter = remember {
         CartesianValueFormatter { _, value, _ ->
-            value.toInt().toString()
+            val nearest = kotlin.math.round(value).toInt()
+            if (abs(value - nearest) < 0.01) nearest.toString() else " "
         }
     }
 
@@ -529,7 +601,59 @@ private fun WeeklySessionsBarChart(
     )
 }
 
-private fun buildWeeklyBuckets(
+internal fun buildLast7DaysBuckets(
+    sessions: List<ExerciseSession>,
+    referenceDate: Date = Date()
+): List<DailySessionBucket> {
+    val cal = Calendar.getInstance()
+    val todayStart = dayStartMillis(referenceDate)
+    val dayStarts = (6 downTo 0).map { daysAgo ->
+        cal.timeInMillis = todayStart
+        cal.add(Calendar.DAY_OF_YEAR, -daysAgo)
+        cal.timeInMillis
+    }
+
+    val countsByDay = mutableMapOf<Long, Int>()
+    val repsByDay = mutableMapOf<Long, Long>()
+    sessions.forEach { session ->
+        val date = (session.updatedAt ?: session.createdAt ?: Timestamp.now()).toDate()
+        val dayKey = dayStartMillis(date)
+        countsByDay[dayKey] = (countsByDay[dayKey] ?: 0) + 1
+        repsByDay[dayKey] = (repsByDay[dayKey] ?: 0L) + session.completedReps
+    }
+
+    val dayFormat = SimpleDateFormat("EEE", Locale("es", "ES"))
+
+    return dayStarts.mapIndexed { index, dayStart ->
+        val label = if (index == dayStarts.lastIndex) {
+            "Hoy"
+        } else {
+            val raw = dayFormat.format(Date(dayStart)).replace(".", "")
+            raw.replaceFirstChar { ch ->
+                if (ch.isLowerCase()) ch.titlecase(Locale("es", "ES")) else ch.toString()
+            }.take(3)
+        }
+        DailySessionBucket(
+            dayStartMillis = dayStart,
+            label = label,
+            completedExercises = countsByDay[dayStart] ?: 0,
+            totalReps = repsByDay[dayStart] ?: 0L
+        )
+    }
+}
+
+private fun dayStartMillis(date: Date): Long {
+    val cal = Calendar.getInstance().apply {
+        time = date
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    return cal.timeInMillis
+}
+
+internal fun buildWeeklyBuckets(
     sessions: List<ExerciseSession>,
     weeksCount: Int = 6
 ): List<WeeklySessionBucket> {
