@@ -1,34 +1,42 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.ManageAccounts
 import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -52,9 +64,15 @@ import com.example.R
 import com.example.data.model.ExerciseCategory
 import com.example.data.model.HandMotionType
 import com.example.data.model.RehabExercise
+import com.example.data.repository.GoogleSignInFailureKind
 import com.example.data.repository.onGoogleSignInClicked
+import com.example.data.repository.openAddGoogleAccountSettings
 import com.example.ui.theme.AmberWarningBg
 import com.example.ui.theme.AmberWarningText
+import com.example.ui.theme.GoogleBlue
+import com.example.ui.theme.GoogleGreen
+import com.example.ui.theme.GoogleRed
+import com.example.ui.theme.GoogleYellow
 
 fun exercisePhotoRes(motionType: HandMotionType): Int = when (motionType) {
     HandMotionType.WRIST_FLEX_EXT -> R.drawable.img_hand_wrist_mobility
@@ -265,9 +283,83 @@ fun ExerciseSummaryCard(
 }
 
 @Composable
+fun GoogleGLogo(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.size(24.dp),
+        shape = CircleShape,
+        color = Color.White,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(4.dp)
+        ) {
+            val strokeWidth = size.minDimension * 0.24f
+            val inset = strokeWidth / 2f
+            val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
+            val topLeft = Offset(inset, inset)
+            val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+
+            // Red top arc
+            drawArc(
+                color = GoogleRed,
+                startAngle = 215f,
+                sweepAngle = 100f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = stroke
+            )
+            // Yellow left arc
+            drawArc(
+                color = GoogleYellow,
+                startAngle = 140f,
+                sweepAngle = 78f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = stroke
+            )
+            // Green bottom arc
+            drawArc(
+                color = GoogleGreen,
+                startAngle = 42f,
+                sweepAngle = 100f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = stroke
+            )
+            // Blue right arc
+            drawArc(
+                color = GoogleBlue,
+                startAngle = -5f,
+                sweepAngle = 52f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = stroke
+            )
+            // Blue horizontal crossbar of G
+            val centerY = size.height / 2f
+            drawLine(
+                color = GoogleBlue,
+                start = Offset(size.width * 0.50f, centerY),
+                end = Offset(size.width - inset * 0.4f, centerY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Butt
+            )
+        }
+    }
+}
+
+@Composable
 fun GoogleSignInActionButton(
     label: String = "Continuar con Google",
     onAuthSuccess: () -> Unit = {},
+    onBeforeClick: () -> Unit = {},
+    testTag: String = "google_sign_in_inline_button",
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -275,27 +367,68 @@ fun GoogleSignInActionButton(
     val credentialManager = remember { CredentialManager.create(context) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var failureKind by remember { mutableStateOf<GoogleSignInFailureKind?>(null) }
+    var cancelledHint by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (errorMessage != null) {
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp)
+                    .padding(bottom = 10.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = errorMessage.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    if (failureKind == GoogleSignInFailureKind.NO_ACCOUNT_ON_DEVICE) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { openAddGoogleAccountSettings(context) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .testTag("add_google_account_settings_button"),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ManageAccounts,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Agregar cuenta de Google en Ajustes")
+                        }
+                    }
+                }
+            }
+        } else if (cancelledHint) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
             ) {
                 Text(
-                    text = errorMessage.orEmpty(),
+                    text = "Ventana cerrada. Toca el botón de abajo cuando quieras entrar con tu cuenta de Google.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(10.dp)
                 )
             }
         }
+
         Button(
             onClick = {
+                onBeforeClick()
                 errorMessage = null
+                failureKind = null
+                cancelledHint = false
                 isLoading = true
                 onGoogleSignInClicked(
                     context = context,
@@ -311,27 +444,125 @@ fun GoogleSignInActionButton(
                     scope = scope,
                     onAuthCancelled = {
                         isLoading = false
+                        cancelledHint = true
+                    },
+                    onAuthErrorDetailed = { msg, kind ->
+                        isLoading = false
+                        errorMessage = msg
+                        failureKind = kind
                     }
                 )
             },
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .testTag("google_sign_in_inline_button"),
-            shape = MaterialTheme.shapes.large
+                .heightIn(min = 52.dp)
+                .testTag(testTag),
+            shape = MaterialTheme.shapes.large,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.2.dp
                 )
-                Spacer(Modifier.width(8.dp))
-                Text("Conectando con Google...")
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "Conectando con Google...",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
             } else {
-                Text(label)
+                GoogleGLogo()
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
 }
+
+@Composable
+fun GoogleTopBarPill(
+    onAuthSuccess: () -> Unit = {},
+    onAuthCancelled: () -> Unit = {},
+    onAuthError: (String, GoogleSignInFailureKind) -> Unit = { _, _ -> },
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    OutlinedButton(
+        onClick = {
+            isLoading = true
+            onGoogleSignInClicked(
+                context = context,
+                credentialManager = credentialManager,
+                onAuthSuccess = {
+                    isLoading = false
+                    onAuthSuccess()
+                },
+                onAuthError = { msg ->
+                    isLoading = false
+                    onAuthError(msg, GoogleSignInFailureKind.GENERAL)
+                },
+                scope = scope,
+                onAuthCancelled = {
+                    isLoading = false
+                    onAuthCancelled()
+                },
+                onAuthErrorDetailed = { msg, kind ->
+                    isLoading = false
+                    onAuthError(msg, kind)
+                }
+            )
+        },
+        enabled = !isLoading,
+        shape = CircleShape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .heightIn(min = 42.dp)
+            .testTag("topbar_google_signin_button")
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 2.dp
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Entrando...",
+                style = MaterialTheme.typography.labelLarge
+            )
+        } else {
+            GoogleGLogo(modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Entrar con Google",
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1
+            )
+        }
+    }
+}
+

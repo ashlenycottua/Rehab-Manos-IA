@@ -5,14 +5,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Home
@@ -22,9 +26,11 @@ import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Timeline
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -32,10 +38,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,9 +84,10 @@ import com.example.data.model.ExerciseSession
 import com.example.data.model.RehabExercise
 import com.example.data.model.RoutineItem
 import com.example.data.model.UserRehabProfile
+import com.example.data.repository.GoogleSignInFailureKind
 import com.example.data.repository.RehabRepository
-import com.example.data.repository.attemptAutoSignIn
-import com.example.data.repository.authStateFlow
+import com.example.data.repository.openAddGoogleAccountSettings
+import com.example.ui.components.GoogleTopBarPill
 import com.example.ui.screens.AssistantScreen
 import com.example.ui.screens.EbookScreen
 import com.example.ui.screens.ExerciseDetailScreen
@@ -86,8 +97,11 @@ import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.ProgressScreen
 import com.example.ui.screens.VisionScreen
+import com.example.ui.screens.WelcomeScreen
 import com.example.ui.theme.RehabManosTheme
 import com.example.ui.viewmodel.AiViewModel
+import com.example.ui.viewmodel.AuthUiState
+import com.example.ui.viewmodel.AuthViewModel
 import com.example.ui.viewmodel.RehabViewModel
 import com.example.ui.viewmodel.UiState
 import com.google.firebase.Firebase
@@ -168,24 +182,48 @@ fun AppNavigation(
     onConsumeReminderIntent: () -> Unit = {},
     auth: FirebaseAuth = Firebase.auth
 ) {
-    val currentUser by auth.authStateFlow()
-        .collectAsStateWithLifecycle(initialValue = auth.currentUser)
+    val authViewModel: AuthViewModel = viewModel(
+        key = "auth_root",
+        factory = viewModelFactory {
+            initializer { AuthViewModel(auth = auth) }
+        }
+    )
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val guestModeBypassed by authViewModel.guestModeBypassed.collectAsStateWithLifecycle()
 
-    val user = currentUser
-    if (user == null) {
-        GuestAppShell(
-            openedFromReminder = openedFromReminder,
-            onConsumeReminderIntent = onConsumeReminderIntent
-        )
-    } else {
-        key(user.uid) {
-            AuthenticatedAppShell(
-                currentUserId = user.uid,
-                userDisplayName = user.displayName.orEmpty(),
-                userEmail = user.email,
-                openedFromReminder = openedFromReminder,
-                onConsumeReminderIntent = onConsumeReminderIntent
-            )
+    LaunchedEffect(openedFromReminder, authState) {
+        if (openedFromReminder && authState is AuthUiState.Unauthenticated) {
+            authViewModel.enterGuestMode()
+        }
+    }
+
+    when (val state = authState) {
+        is AuthUiState.Unauthenticated -> {
+            if (guestModeBypassed || openedFromReminder) {
+                GuestAppShell(
+                    openedFromReminder = openedFromReminder,
+                    onConsumeReminderIntent = onConsumeReminderIntent
+                )
+            } else {
+                WelcomeScreen(
+                    onAuthSuccess = { authViewModel.resetGuestModeBypass() },
+                    onContinueAsGuest = { authViewModel.enterGuestMode() }
+                )
+            }
+        }
+        is AuthUiState.Authenticated -> {
+            LaunchedEffect(state.uid) {
+                authViewModel.resetGuestModeBypass()
+            }
+            key(state.uid) {
+                AuthenticatedAppShell(
+                    currentUserId = state.uid,
+                    userDisplayName = state.displayName,
+                    userEmail = state.email,
+                    openedFromReminder = openedFromReminder,
+                    onConsumeReminderIntent = onConsumeReminderIntent
+                )
+            }
         }
     }
 }
@@ -197,20 +235,8 @@ private fun GuestAppShell(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val credentialManager = remember { CredentialManager.create(context) }
     val aiViewModel: AiViewModel = viewModel(key = "ai_guest")
     val reminderPrefs = remember { ReminderPreferences(context) }
-
-    // Silent background check for already-authorized Google credentials without blocking exploration
-    LaunchedEffect(Unit) {
-        attemptAutoSignIn(
-            context = context,
-            credentialManager = credentialManager,
-            onAuthSuccess = {},
-            onUnauthenticated = {},
-            scope = scope
-        )
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var guestVoiceEnabled by remember { mutableStateOf(true) }
@@ -480,6 +506,7 @@ private fun AuthenticatedAppShell(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlatformNavShell(
     isGuestMode: Boolean,
@@ -552,6 +579,76 @@ private fun PlatformNavShell(
         Scaffold(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             contentWindowInsets = WindowInsets.safeDrawing,
+            topBar = {
+                if (isGuestMode && showTopLevelNav) {
+                    TopAppBar(
+                        title = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.PanTool,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(6.dp)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = "Rehab Manos AI",
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                    Text(
+                                        text = "Modo exploración",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        actions = {
+                            GoogleTopBarPill(
+                                onAuthSuccess = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("¡Bienvenido! Sesión iniciada con Google.")
+                                    }
+                                },
+                                onAuthCancelled = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Puedes entrar con Google cuando quieras desde aquí arriba.")
+                                    }
+                                },
+                                onAuthError = { message, kind ->
+                                    scope.launch {
+                                        if (kind == GoogleSignInFailureKind.NO_ACCOUNT_ON_DEVICE) {
+                                            val res = snackbarHostState.showSnackbar(
+                                                message = "Agrega una cuenta de Google en tu teléfono para entrar en 1 toque.",
+                                                actionLabel = "Agregar cuenta",
+                                                duration = SnackbarDuration.Long
+                                            )
+                                            if (res == SnackbarResult.ActionPerformed) {
+                                                openAddGoogleAccountSettings(context)
+                                            }
+                                        } else {
+                                            snackbarHostState.showSnackbar(message)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+            },
             bottomBar = {
                 if (showTopLevelNav && !useNavRail) {
                     NavigationBar {

@@ -187,50 +187,59 @@ fun HomeScreen(
                             }
                         }
 
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
                             if (isGuestMode) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Modo exploración libre",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Explora ejercicios y la guía completa sin crear cuenta.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Text(
+                                    text = "Entra fácil con Google",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = "Un toque con tu cuenta Gmail (sin contraseñas) para guardar tu rutina y progreso en la nube.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                GoogleSignInActionButton(
+                                    label = "Continuar con Google",
+                                    testTag = "home_hero_google_signin_button"
+                                )
                             } else {
                                 val handLabel = AffectedHand.fromId(profile?.affectedHand).label
                                 val goalLabel = PrimaryGoal.fromId(profile?.primaryGoal).label
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "$handLabel · $goalLabel",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = when (sessionsState) {
-                                            is UiState.Loading -> "Sincronizando sesiones..."
-                                            is UiState.Error -> "Sin conexión con historial"
-                                            is UiState.Success -> "${sessions.size} sesiones registradas"
-                                        },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                FilledTonalButton(
-                                    onClick = onEditIntake,
-                                    modifier = Modifier.testTag("home_edit_intake_button")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Ficha inicial")
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "$handLabel · $goalLabel",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = when (sessionsState) {
+                                                is UiState.Loading -> "Sincronizando sesiones..."
+                                                is UiState.Error -> "Sin conexión con historial"
+                                                is UiState.Success -> "${sessions.size} sesiones registradas"
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    FilledTonalButton(
+                                        onClick = onEditIntake,
+                                        modifier = Modifier.testTag("home_edit_intake_button")
+                                    ) {
+                                        Text("Ficha inicial")
+                                    }
                                 }
                             }
                         }
@@ -287,36 +296,7 @@ fun HomeScreen(
             }
         }
 
-        if (isGuestMode) {
-            item {
-                Column(modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth()) {
-                    Card(
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f))
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                text = "¿Quieres guardar tu progreso en la nube?",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                            Text(
-                                text = "Puedes iniciar sesión con Google cuando quieras para sincronizar tu rutina y sesiones semanales.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
-                            )
-                            GoogleSignInActionButton(label = "Conectar con Google")
-                        }
-                    }
-                }
-            }
-        }
+        // Redundant guest sign-in card removed; one-tap Google entry now lives directly in the top Hero card and persistent TopAppBar.
 
         if (profile?.recentSurgeryOrAcutePain == true) {
             item {

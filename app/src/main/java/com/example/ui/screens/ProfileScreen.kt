@@ -72,6 +72,7 @@ import com.example.data.model.AffectedHand
 import com.example.data.model.PrimaryGoal
 import com.example.data.model.UserRehabProfile
 import com.example.data.repository.signOutUser
+import com.example.ui.components.GoogleGLogo
 import com.example.ui.components.GoogleSignInActionButton
 import com.example.ui.components.SafetyNoticeCard
 
@@ -290,6 +291,34 @@ fun ProfileScreen(
                         Spacer(Modifier.height(14.dp))
                         GoogleSignInActionButton(label = "Iniciar sesión con Google")
                     } else {
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                GoogleGLogo(modifier = Modifier.size(20.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Sesión iniciada con Google",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "Tu rutina, sesiones y recordatorios están respaldados en Firebase.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
+                        }
+
                         val handLabel = AffectedHand.fromId(profile?.affectedHand).label
                         val goalLabel = PrimaryGoal.fromId(profile?.primaryGoal).label
                         Text(
@@ -619,14 +648,18 @@ fun ProfileScreen(
         // Sign Out (only when authenticated)
         if (!isGuestMode) {
             item {
+                var isSigningOut by remember { mutableStateOf(false) }
                 Column(modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth()) {
                     OutlinedButton(
                         onClick = {
+                            isSigningOut = true
                             signOutUser(
                                 credentialManager = credentialManager,
-                                scope = scope
+                                scope = scope,
+                                onSignOutComplete = { isSigningOut = false }
                             )
                         },
+                        enabled = !isSigningOut,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
@@ -635,7 +668,7 @@ fun ProfileScreen(
                     ) {
                         Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Cerrar sesión")
+                        Text(if (isSigningOut) "Cerrando sesión..." else "Cerrar sesión")
                     }
                     Spacer(Modifier.height(16.dp))
                 }

@@ -50,3 +50,10 @@ val OnDarkSurface = Color(0xFFDFE8E6)
 val DarkSurfaceVariant = Color(0xFF1F2F2E)
 val OnDarkSurfaceVariant = Color(0xFFB5C7C5)
 val DarkOutline = Color(0xFF394C4B)
+
+// Google Emblem Palette
+val GoogleBlue = Color(0xFF4285F4)
+val GoogleRed = Color(0xFFEA4335)
+val GoogleYellow = Color(0xFFFBBC05)
+val GoogleGreen = Color(0xFF34A853)
+
